@@ -48,20 +48,17 @@ Acesse a versão de produção em: **[https://ejgtransporte.com.br](https://ejgt
 
 ## 🏗️ Estrutura do Projeto
 
-```
-/
-├── src/
-│   ├── app/         # Páginas e roteamento do Next.js
-│   ├── components/  # Componentes React reutilizáveis
-│   ├── ai/          # Fluxos e configurações de IA (Genkit)
-│   ├── firebase/    # Configuração e hooks do Firebase
-│   ├── lib/         # Funções utilitárias e dados
-│   └── hooks/       # Hooks customizados
-├── docs/            # Documentação do projeto
-├── public/          # Arquivos estáticos
-├── next.config.ts   # Configurações do Next.js
-└── package.json     # Dependências e scripts
-```
+optilog-app/
+├── web/                 # Front-end Next.js/React
+│   ├── src/app/page.tsx # Página inicial
+│   ├── public/
+│   ├── js/main.js       # Fetch para Edge Function
+│   ├── package.json
+│   └── next.config.ts
+├── api/                 # Edge Function Deno
+│   └── index.ts
+└── README.md
+
 
 ---
 
