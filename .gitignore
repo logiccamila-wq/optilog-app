@@ -1,29 +1,16 @@
-# Gradle
-.gradle/
-build/
-!gradle-wrapper.jar
-.gradle/
-local.properties
 
-# Android Studio
-.idea/
-*.iml
-*.hprof
-captures/
-.externalNativeBuild/
+# Dependencies
+**/node_modules
 
-# Log/Temp
-*.log
-*.temp
+# Next.js build output
+**/.next
+**/out
 
-# Generated files
-app/release/
-app/debug/
-outputs/
+# Local Environment Variables
+.env*.local
 
-# Google Services
-google-services.json
-
-# Other
+# Misc
 .DS_Store
-
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
