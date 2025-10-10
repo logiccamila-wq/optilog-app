@@ -65,6 +65,21 @@ export default function BlogPostsPage() {
     return <main className="container"><p>Carregando posts...</p></main>;
   }
 
+  interface EditPageProps {
+  params: {
+    slug: string;
+  };
+}
+
+export default function EditPage({ params }: EditPageProps) {
+  const { slug } = params;
+
+  return (
+    <div>
+      <h1>Editando post: {slug}</h1>
+    </div>
+  
+
   return (
     <main className="container">
       <h1 className="header">My Blog</h1>
@@ -107,3 +122,7 @@ export default function BlogPostsPage() {
     </main>
   );
 }
+
+
+
+
