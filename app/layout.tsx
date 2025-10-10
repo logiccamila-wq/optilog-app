@@ -1,22 +1,15 @@
 import './globals.css';
-import Header from './Header';
+import { ReactNode } from 'react';
 
 export const metadata = {
-  title: 'My Blog',
-  description: 'A blog powered by Next.js and Supabase',
+  title: 'Optilog Blog',
+  description: 'Blog com Supabase e Next.js'
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body>
-        <Header />
-        <main>{children}</main>
-      </body>
+    <html lang="pt-BR">
+      <body>{children}</body>
     </html>
   );
 }
