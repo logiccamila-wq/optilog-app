@@ -65,21 +65,6 @@ export default function BlogPostsPage() {
     return <main className="container"><p>Carregando posts...</p></main>;
   }
 
-  interface EditPageProps {
-  params: {
-    slug: string;
-  };
-}
-
-export default function EditPage({ params }: EditPageProps) {
-  const { slug } = params;
-
-  return (
-    <div>
-      <h1>Editando post: {slug}</h1>
-    </div>
-  
-
   return (
     <main className="container">
       <h1 className="header">My Blog</h1>
@@ -98,31 +83,4 @@ export default function EditPage({ params }: EditPageProps) {
           <Link href={`/posts/${post.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
             <h2 className="post-title">{post.title}</h2>
           </Link>
-          <p className="post-content">{post.content}</p>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-            <small className="post-status">Status: {post.is_published ? 'Published' : 'Draft'}</small>
-            {user && user.id === post.author_id && (
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Link href={`/posts/${post.slug}/edit`}>
-                  <button style={{ background: '#007bff', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer' }}>
-                    Editar
-                  </button>
-                </Link>
-                <button 
-                  onClick={() => handleDelete(post.id)}
-                  style={{ background: '#dc3545', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer' }}
-                >
-                  Deletar
-                </button>
-              </div>
-            )}
-          </div>
-        </article>
-      ))}
-    </main>
-  );
-}
-
-
-
-
+          <p className="post-content">{po
