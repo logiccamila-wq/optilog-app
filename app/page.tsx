@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { supabase } from "../../utils/supabase/client";
+import { supabase } from "../utils/supabase/client";
 
 // Tipagem do post
 type Post = {
