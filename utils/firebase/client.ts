@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+// Compat imports to ensure browser-friendly auth in Next.js client bundles
+import firebase from 'firebase/compat/app';
 
 const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
@@ -22,4 +23,3 @@ const firebaseConfig = hasConfig ? {
 
 export const app = hasConfig ? (!getApps().length ? initializeApp(firebaseConfig as any) : getApp()) : (null as any);
 export const db = hasConfig ? getFirestore(app) : (null as any);
-export const auth = hasConfig ? getAuth(app) : (null as any);

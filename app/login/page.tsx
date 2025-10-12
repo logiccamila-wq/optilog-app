@@ -1,7 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { auth } from '@/utils/firebase/client';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { isFirebaseReady, signIn } from '@/utils/firebase/browserAuth';
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -10,7 +9,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canAuth = Boolean(auth);
+  const canAuth = isFirebaseReady();
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +20,7 @@ export default function LoginPage() {
     }
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth as any, email, password);
+      await signIn(email, password);
       window.location.href = '/';
     } catch (err: any) {
       setError(err.message || 'Falha no login');

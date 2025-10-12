@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { auth } from '@/utils/firebase/client';
-import { signOut } from 'firebase/auth';
+import { isFirebaseReady, logout } from '@/utils/firebase/browserAuth';
 
 export default function LogoutPage() {
   const [error, setError] = useState<string | null>(null);
@@ -9,8 +8,8 @@ export default function LogoutPage() {
   useEffect(() => {
     const run = async () => {
       try {
-        if (auth) {
-          await signOut(auth as any);
+        if (isFirebaseReady()) {
+          await logout();
         }
       } catch (e: any) {
         setError(e.message || 'Falha ao sair');

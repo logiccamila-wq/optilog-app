@@ -1,7 +1,6 @@
 "use client";
 import { useState } from 'react';
-import { auth } from '@/utils/firebase/client';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { isFirebaseReady, signUp } from '@/utils/firebase/browserAuth';
 import Link from 'next/link';
 
 export default function SignupPage() {
@@ -11,7 +10,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canAuth = Boolean(auth);
+  const canAuth = isFirebaseReady();
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,10 +21,7 @@ export default function SignupPage() {
     }
     setLoading(true);
     try {
-      const cred = await createUserWithEmailAndPassword(auth as any, email, password);
-      if (name) {
-        await updateProfile(cred.user, { displayName: name });
-      }
+      const cred = await signUp(email, password, name);
       window.location.href = '/';
     } catch (err: any) {
       setError(err.message || 'Falha no cadastro');
