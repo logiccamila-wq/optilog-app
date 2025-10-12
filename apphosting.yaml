@@ -44,3 +44,7 @@ env:
 
   # Optional external Posts API URL (remove secret to avoid resolution errors)
   # Set via value if needed, or omit to use Firestore/demo fallback
+  - variable: BP_NODE_VERSION
+    value: "20.*"
+    availability:
+      - BUILD
