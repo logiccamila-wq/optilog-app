@@ -56,8 +56,14 @@ export async function getPosts(): Promise<Post[]> {
 
   // 2) Tenta Firestore, se configurado
   if (db) {
-    const snap = await getDocs(collection(db, 'posts'));
-    return snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as Post[];
+    try {
+      const q = query(collection(db, 'posts'), where('is_published', '==', true));
+      const snap = await getDocs(q);
+      return snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as Post[];
+    } catch (err) {
+      console.warn('Permissão/erro ao acessar Firestore, usando demo:', err);
+      return demoPosts;
+    }
   }
 
   // 3) Fallback demo
@@ -95,11 +101,21 @@ export async function getPost(slug: string): Promise<Post | null> {
 
   // 2) Tenta Firestore
   if (db) {
-    const q = query(collection(db, 'posts'), where('slug', '==', slug), limit(1));
-    const snap = await getDocs(q);
-    if (snap.empty) return null;
-    const doc = snap.docs[0];
-    return { id: doc.id, ...(doc.data() as any) } as Post;
+    try {
+      const q = query(
+        collection(db, 'posts'),
+        where('slug', '==', slug),
+        where('is_published', '==', true),
+        limit(1)
+      );
+      const snap = await getDocs(q);
+      if (snap.empty) return null;
+      const doc = snap.docs[0];
+      return { id: doc.id, ...(doc.data() as any) } as Post;
+    } catch (err) {
+      console.warn('Permissão/erro ao buscar post no Firestore, usando demo:', err);
+      return demoPosts.find(p => p.slug === slug) || null;
+    }
   }
 
   // 3) Fallback demo
@@ -133,11 +149,34 @@ export async function getPostsPage(pageSize: number, afterSlug?: string): Promis
 
   // 2) Firestore com orderBy('slug') e startAfter
   if (db) {
-    const q = afterSlug
-      ? query(collection(db, 'posts'), orderBy('slug'), startAfter(afterSlug), limit(pageSize))
-      : query(collection(db, 'posts'), orderBy('slug'), limit(pageSize));
-    const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as Post[];
+    try {
+      const baseQuery = afterSlug
+        ? query(
+            collection(db, 'posts'),
+            where('is_published', '==', true),
+            orderBy('slug'),
+            startAfter(afterSlug),
+            limit(pageSize)
+          )
+        : query(
+            collection(db, 'posts'),
+            where('is_published', '==', true),
+            orderBy('slug'),
+            limit(pageSize)
+          );
+      const snap = await getDocs(baseQuery);
+      return snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })) as Post[];
+    } catch (err) {
+      console.warn('Permissão/erro ao paginar Firestore, usando demo:', err);
+      // 3) Fallback demo com paginação baseada em slug
+      const sorted = [...demoPosts].sort((a, b) => a.slug.localeCompare(b.slug));
+      let startIndex = 0;
+      if (afterSlug) {
+        const idx = sorted.findIndex(p => p.slug === afterSlug);
+        startIndex = idx >= 0 ? idx + 1 : 0;
+      }
+      return sorted.slice(startIndex, startIndex + pageSize);
+    }
   }
 
   // 3) Fallback demo com paginação baseada em slug
