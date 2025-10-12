@@ -1,5 +1,11 @@
 {
-  "functions": {
-    "source": "functions"
+  "functions": { "source": "functions" },
+  "hosting": {
+    "public": "frontend/public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
   }
 }

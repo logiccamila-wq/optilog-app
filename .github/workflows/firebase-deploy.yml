@@ -42,8 +42,8 @@ jobs:
           npm ci
           npm run build
 
-      - name: Deploy Functions via Firebase CLI
+      - name: Deploy Hosting and Functions via Firebase CLI
         env:
           FIREBASE_TOKEN: ${{ steps.auth.outputs.access_token }}
         run: |
-          firebase deploy --project ${{ vars.GCP_PROJECT_ID }} --only functions --token "$FIREBASE_TOKEN"
+          firebase deploy --project ${{ vars.GCP_PROJECT_ID }} --only hosting,functions --token "$FIREBASE_TOKEN"
