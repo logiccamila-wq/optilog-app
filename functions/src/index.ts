@@ -8,8 +8,8 @@ const secretManagerClient = new SecretManagerServiceClient();
  * Retrieves the OpenAI API key from Google Cloud Secret Manager.
  */
 async function getOpenAIKey(): Promise<string> {
-  // IMPORTANT: Make sure the secret name 'OPENAI_API_KEY' exists in your Google Cloud project.
-  const name = "projects/435822865745/secrets/OPENAI_API_KEY/versions/latest";
+  // IMPORTANT: Make sure the secret name 'OPENAI_API_KE' exists in your Google Cloud project.
+  const name = "projects/435822865745/secrets/OPENAI_API_KE/versions/latest";
 
   try {
     const [version] = await secretManagerClient.accessSecretVersion({ name });
