@@ -1,6 +1,6 @@
-import { createClient } from "../../../utils/supabase/server";
-import { notFound } from "next/navigation";
-import AddComment from "./AddComment";
+"use client";
+import { useEffect, useState } from 'react';
+import { getPost, type Post } from "@/utils/posts";
 
 type PostPageProps = {
   params: {
@@ -8,36 +8,36 @@ type PostPageProps = {
   };
 };
 
-// Re-exporting the client component is a good pattern in App Router
-const AddCommentClient = AddComment;
-
 export const dynamic = 'force-dynamic';
 
-export default async function PostPage({ params }: PostPageProps) {
-  const supabase = createClient();
+export default function PostPage({ params }: PostPageProps) {
   const { slug } = params;
+  const [post, setPost] = useState<Post | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!supabase) {
-    notFound();
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const p = await getPost(slug);
+        setPost(p);
+        setError(null);
+      } catch (e: any) {
+        setError(e.message || 'Erro ao carregar post');
+      } finally {
+        setLoading(false);
+      }
+    };
+    run();
+  }, [slug]);
+
+  if (loading) {
+    return <main className="container"><p>Carregando post...</p></main>;
   }
 
-  // Fetch the post by its slug
-  const { data: post, error: postError } = await supabase
-    .from("posts")
-    .select("*")
-    .eq("slug", slug)
-    .single();
-
-  if (postError || !post) {
-    notFound(); // If post doesn't exist, show a 404 page
+  if (!post) {
+    return <main className="container"><p>Post não encontrado.</p></main>;
   }
-
-  // Fetch comments for the post and join with the users table to get author's username
-  const { data: comments, error: commentsError } = await supabase
-    .from("comments")
-    .select("*, author:users(username)")
-    .eq("post_id", post.id)
-    .order("created_at", { ascending: true });
 
   return (
     <main className="container">
@@ -45,29 +45,6 @@ export default async function PostPage({ params }: PostPageProps) {
         <h1 className="post-title">{post.title}</h1>
         <p className="post-content">{post.content}</p>
       </article>
-
-      <section className="post-card">
-        <h2 style={{ marginBottom: '2rem' }}>Comments</h2>
-        
-        <AddCommentClient postId={post.id} />
-
-        <hr style={{ margin: '2rem 0' }} />
-
-        <div>
-          {comments && comments.length > 0 ? (
-            comments.map((comment: any) => (
-              <div key={comment.id} style={{ borderBottom: '1px solid #eee', padding: '1rem 0' }}>
-                <p>{comment.content}</p>
-                <small style={{ color: '#666' }}>
-                  Comment by: {comment.author?.username || 'Anonymous'}
-                </small>
-              </div>
-            ))
-          ) : (
-            <p>No comments yet. Be the first to comment!</p>
-          )}
-        </div>
-      </section>
     </main>
   );
 }

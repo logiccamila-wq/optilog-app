@@ -1,72 +1,60 @@
 "use client";
-
 import { useState } from 'react';
-export const dynamic = 'force-dynamic';
-import { useRouter } from 'next/navigation';
-import { supabase } from '../../utils/supabase/client';
+import { auth } from '@/utils/firebase/client';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import Link from 'next/link';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [name, setName] = useState('');
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const canAuth = Boolean(auth);
+
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     setError(null);
-    setMessage(null);
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
-    if (error) {
-      setError(error.message);
-      setIsSubmitting(false);
-    } else {
-      setMessage("Signup successful! Please check your email to confirm your account.");
-      setIsSubmitting(false);
+    if (!canAuth) {
+      setError('Firebase não configurado. Preencha NEXT_PUBLIC_FIREBASE_* no .env.local');
+      return;
+    }
+    setLoading(true);
+    try {
+      const cred = await createUserWithEmailAndPassword(auth as any, email, password);
+      if (name) {
+        await updateProfile(cred.user, { displayName: name });
+      }
+      window.location.href = '/';
+    } catch (err: any) {
+      setError(err.message || 'Falha no cadastro');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <main style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '400px', margin: 'auto' }}>
-      <h1>Sign Up</h1>
-      <form onSubmit={handleSignup}>
-        <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="email" style={{ display: 'block', marginBottom: '0.5rem' }}>Email</label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ width: '100%', padding: '0.5rem' }}
-          />
-        </div>
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label htmlFor="password" style={{ display: 'block', marginBottom: '0.5rem' }}>Password</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: '100%', padding: '0.5rem' }}
-          />
-        </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        {message && <p style={{ color: 'green' }}>{message}</p>}
-        <button type="submit" disabled={isSubmitting} style={{ padding: '0.75rem 1.5rem', cursor: 'pointer' }}>
-          {isSubmitting ? 'Signing up...' : 'Sign Up'}
-        </button>
+    <main className="container">
+      <h1>Cadastro</h1>
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <form onSubmit={onSubmit} style={{ display: 'grid', gap: '0.75rem', maxWidth: 360 }}>
+        <label>
+          Nome
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Opcional" style={{ width: '100%' }} />
+        </label>
+        <label>
+          Email
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%' }} />
+        </label>
+        <label>
+          Senha
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%' }} />
+        </label>
+        <button type="submit" disabled={loading} style={{ padding: '0.5rem 1rem' }}>{loading ? 'Cadastrando...' : 'Cadastrar'}</button>
       </form>
       <p style={{ marginTop: '1rem' }}>
-        Already have an account? <Link href="/login">Log In</Link>
+        Já tem conta? <Link href="/login">Entrar</Link>
       </p>
     </main>
   );

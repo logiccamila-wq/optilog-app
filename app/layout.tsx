@@ -1,5 +1,6 @@
 import './globals.css';
 import { ReactNode } from 'react';
+import Header from './Header';
 
 export const metadata = {
   title: 'Optilog Blog',
@@ -9,7 +10,10 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <body>
+        <Header />
+        {children}
+      </body>
     </html>
   );
 }
