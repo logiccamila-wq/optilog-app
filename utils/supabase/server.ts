@@ -1,14 +1,15 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
-// This is a server-side client. It's safe to use the anon key here.
-
+// Server-side client with lazy initialization to avoid build-time crashes
 export const createClient = () => {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    throw new Error('Supabase environment variables are not set in .env.local');
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // If envs are missing (e.g., during Vercel build or when Supabase isn't used),
+  // return a nullable client. Call sites must guard usage.
+  if (!url || !anon) {
+    return (null as any);
   }
 
-  return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
+  return createSupabaseClient(url, anon);
 };

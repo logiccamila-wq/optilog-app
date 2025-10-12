@@ -15,6 +15,13 @@ export default function AddComment({ postId }: { postId: string }) {
     setIsSubmitting(true);
     setError(null);
 
+    // Guard: if Supabase isn't configured, gracefully inform the user
+    if (!supabase || !supabase.auth?.getSession) {
+      setError('Supabase não está configurado neste ambiente.');
+      setIsSubmitting(false);
+      return;
+    }
+
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       setError("You must be logged in to comment.");

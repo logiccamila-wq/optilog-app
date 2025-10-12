@@ -2,9 +2,15 @@ import { createClient } from '../utils/supabase/server';
 import LogoutButton from './LogoutButton';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Header() {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  let user: any = null;
+  if (supabase && supabase.auth?.getUser) {
+    const { data } = await supabase.auth.getUser();
+    user = data?.user || null;
+  }
 
   return (
     <header style={{

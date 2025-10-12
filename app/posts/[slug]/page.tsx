@@ -11,9 +11,15 @@ type PostPageProps = {
 // Re-exporting the client component is a good pattern in App Router
 const AddCommentClient = AddComment;
 
+export const dynamic = 'force-dynamic';
+
 export default async function PostPage({ params }: PostPageProps) {
   const supabase = createClient();
   const { slug } = params;
+
+  if (!supabase) {
+    notFound();
+  }
 
   // Fetch the post by its slug
   const { data: post, error: postError } = await supabase
