@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabase/client';
 
@@ -124,15 +125,5 @@ export default function BlogPostsPage() {
     </main>
   );
 }
-
-// Página de edição
-export function EditPage({ params }: EditPageProps) {
-  const { slug } = params;
-
-  return (
-    <main className="container">
-      <h1>Editando post: {slug}</h1>
-      <p>Implemente aqui seu formulário de edição com Supabase</p>
-    </main>
-  );
-}
+// Removed extra named export to comply with Next.js App Router rules
+// (page files should not export other components/functions)
