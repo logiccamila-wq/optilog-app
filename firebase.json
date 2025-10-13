@@ -1,11 +1,15 @@
 {
   "functions": { "source": "functions" },
-  "hosting": {
-    "public": "frontend/public",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ]
-  }
+  "firestore": { "rules": "firestore.rules", "indexes": "firestore.indexes.json" },
+  "hosting": [
+    {
+      "site": "studio-4793785332-8ea02",
+      "source": ".",
+      "ignore": [
+        "**/node_modules/**",
+        "**/.*/**"
+      ],
+      "frameworksBackend": { "region": "us-east4" }
+    }
+  ]
 }
