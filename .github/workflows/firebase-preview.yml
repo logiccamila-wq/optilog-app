@@ -38,11 +38,16 @@ jobs:
         run: npm run build
 
       - name: Generate Workbox precache if config exists
+        continue-on-error: true
         run: |
           if [ -f workbox.config.cjs ]; then
-            npx workbox-cli@6 injectManifest --config workbox.config.cjs
+            echo "Found workbox.config.cjs"
+            npx workbox-cli@6 injectManifest --config ./workbox.config.cjs || echo "Workbox injectManifest failed; continuing"
+          elif [ -f workbox-config.js ]; then
+            echo "Found workbox-config.js"
+            npx workbox-cli@6 injectManifest --config ./workbox-config.js || echo "Workbox injectManifest failed; continuing"
           else
-            echo "No workbox.config.cjs found, skipping precache"
+            echo "No Workbox config found, skipping precache"
           fi
 
       - name: Write Service Account and export GOOGLE_APPLICATION_CREDENTIALS (fallback)
