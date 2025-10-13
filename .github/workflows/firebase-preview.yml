@@ -2,49 +2,21 @@ name: Firebase Preview Deploy
 
 on:
   pull_request:
-<<<<<<< HEAD
-    types: [opened, synchronize]
-
-jobs:
-  preview:
-    runs-on: ubuntu-latest
-    env:
-      FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-      FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
-      FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build Next.js
-        run: npm run build
-
-      - name: Deploy to Firebase Preview Channel
-        run: |
-          npx firebase hosting:channel:deploy pr-${{ github.event.pull_request.number }} --project $FIREBASE_PROJECT_ID --expires 7d
-=======
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
-env:
-  PROJECT_ID: studio-4793785332-8ea02
-  SITE_ID: studio-4793785332-8ea02
-  CHANNEL_EXPIRES: 7d
-  FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-
 jobs:
   preview-deploy:
+    name: Build and Preview on Firebase Hosting
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
+    env:
+      FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+      FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
+      FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+      FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -55,26 +27,29 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Save Firebase Service Account (fallback when no FIREBASE_TOKEN)
-        if: ${{ env.FIREBASE_TOKEN == '' }}
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
-        run: |
-          echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /tmp/service-account.json
-          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/service-account.json" >> $GITHUB_ENV
-
       - name: Install dependencies (include dev deps)
         run: npm ci --include=dev
 
       - name: Verify TypeScript React types
         run: |
-          npm ls @types/react @types/react-dom || npm i -D @types/react @types/react-dom
+          npm ls @types/react @types/react-dom || echo "@types/react not found in lockfile"
 
       - name: Build project
         run: npm run build
 
-      - name: Generate Workbox precache (injectManifest)
-        run: npx workbox-cli@6 injectManifest --config workbox.config.cjs
+      - name: Generate Workbox precache if config exists
+        run: |
+          if [ -f workbox.config.cjs ]; then
+            npx workbox-cli@6 injectManifest --config workbox.config.cjs
+          else
+            echo "No workbox.config.cjs found, skipping precache"
+          fi
+
+      - name: Write Service Account and export GOOGLE_APPLICATION_CREDENTIALS (fallback)
+        if: ${{ env.FIREBASE_TOKEN == '' }}
+        run: |
+          node -e "const fs=require('fs'); const cred={type:'service_account', project_id:process.env.FIREBASE_PROJECT_ID, private_key:(process.env.FIREBASE_PRIVATE_KEY||'').replace(/\\n/g,'\n'), client_email:process.env.FIREBASE_CLIENT_EMAIL}; fs.writeFileSync('/tmp/service-account.json', JSON.stringify(cred));"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/service-account.json" >> $GITHUB_ENV
 
       - name: Deploy to Firebase Hosting preview channel
         id: deploy
@@ -82,9 +57,8 @@ jobs:
           CHANNEL_ID="pr-${{ github.event.pull_request.number }}"
           echo "Using channel: $CHANNEL_ID"
           npx firebase hosting:channel:deploy "$CHANNEL_ID" \
-            --project "$PROJECT_ID" \
-            --site "$SITE_ID" \
-            --expires "$CHANNEL_EXPIRES" \
+            --project "$FIREBASE_PROJECT_ID" \
+            --expires 7d \
             --json > out.json
           cat out.json
           URL=$(node -e "const o=require('./out.json'); const u=o?.result?.url || o?.result?.hosting?.url || ''; console.log(u);")
@@ -93,9 +67,7 @@ jobs:
       - name: Comment preview URL on PR
         uses: peter-evans/create-or-update-comment@v4
         with:
-          token: ${{ github.token }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            🔍 Firebase Hosting preview (expira em ${{ env.CHANNEL_EXPIRES }}):
+            🔍 Firebase Hosting preview (expires in 7d):
             ${{ steps.deploy.outputs.preview_url }}
->>>>>>> origin/main
