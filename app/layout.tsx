@@ -1,50 +1,50 @@
 import './globals.css';
 import { ReactNode } from 'react';
 import Header from './Header';
-import Script from 'next/script';
+import ToastProvider from '@/components/ui/ToastProvider';
 
 export const metadata = {
-  title: 'Optilog Blog',
-  description: 'Blog com Supabase e Next.js'
+  metadataBase: new URL('https://optilog.local'),
+  title: {
+    default: 'OptiLog • Plataforma de Insights',
+    template: '%s • OptiLog',
+  },
+  description: 'OptiLog: conteúdo e ferramentas com IA em tema escuro.',
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+  },
+  openGraph: {
+    title: 'OptiLog • Plataforma de Insights',
+    description: 'UI escura inspirada no Copilot, com destaque azul.',
+    url: '/',
+    siteName: 'OptiLog',
+    images: [
+      { url: '/logo-xyz.svg', width: 512, height: 512, alt: 'OptiLog' },
+    ],
+    locale: 'pt_BR',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'OptiLog',
+    description: 'UI escura com MUI e integração com IA.',
+    images: ['/logo-xyz.svg'],
+  },
+};
+
+export const viewport = {
+  themeColor: '#0D111B',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR">
       <body>
-        <Script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js" strategy="beforeInteractive" />
-        <Script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js" strategy="beforeInteractive" />
-        <Script id="firebase-init" strategy="beforeInteractive">
-          {`
-            (function(){
-              try {
-                var apiKey = ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '')};
-                var authDomain = ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '')};
-                var projectId = ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '')};
-                var storageBucket = ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || '')};
-                var messagingSenderId = ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '')};
-                var appId = ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '')};
-                var hasConfig = apiKey && authDomain && projectId && appId;
-                if (typeof window !== 'undefined' && window.firebase && hasConfig) {
-                  if (!window.firebase.apps || !window.firebase.apps.length) {
-                    window.firebase.initializeApp({
-                      apiKey: apiKey,
-                      authDomain: authDomain,
-                      projectId: projectId,
-                      storageBucket: storageBucket,
-                      messagingSenderId: messagingSenderId,
-                      appId: appId,
-                    });
-                  }
-                }
-              } catch (e) {
-                console && console.warn && console.warn('Falha ao inicializar Firebase via CDN:', e);
-              }
-            })();
-          `}
-        </Script>
-        <Header />
-        {children}
+        <ToastProvider>
+          <Header />
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );
