@@ -37,21 +37,10 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Generate Workbox precache if config exists
-        continue-on-error: true
-        run: |
-          if [ -f workbox.config.cjs ]; then
-            echo "Found workbox.config.cjs"
-            npx workbox-cli@6 injectManifest --config ./workbox.config.cjs || echo "Workbox injectManifest failed; continuing"
-          elif [ -f workbox-config.js ]; then
-            echo "Found workbox-config.js"
-            npx workbox-cli@6 injectManifest --config ./workbox-config.js || echo "Workbox injectManifest failed; continuing"
-          else
-            echo "No Workbox config found, skipping precache"
-          fi
+      # Workbox step removed to avoid any non-essential failures during urgent preview
 
       - name: Write Service Account and export GOOGLE_APPLICATION_CREDENTIALS (fallback)
-        if: ${{ env.FIREBASE_TOKEN == '' }}
+        if: ${{ env.FIREBASE_TOKEN == '' && env.FIREBASE_PRIVATE_KEY != '' && env.FIREBASE_CLIENT_EMAIL != '' }}
         run: |
           node -e "const fs=require('fs'); const cred={type:'service_account', project_id:process.env.FIREBASE_PROJECT_ID, private_key:(process.env.FIREBASE_PRIVATE_KEY||'').replace(/\\n/g,'\n'), client_email:process.env.FIREBASE_CLIENT_EMAIL}; fs.writeFileSync('/tmp/service-account.json', JSON.stringify(cred));"
           echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/service-account.json" >> $GITHUB_ENV
@@ -63,6 +52,7 @@ jobs:
           echo "Using channel: $CHANNEL_ID"
           npx firebase hosting:channel:deploy "$CHANNEL_ID" \
             --project "$FIREBASE_PROJECT_ID" \
+            --non-interactive \
             --expires 7d \
             --json > out.json
           cat out.json
