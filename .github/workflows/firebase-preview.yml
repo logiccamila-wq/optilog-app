@@ -1,0 +1,67 @@
+name: Firebase Preview Deploy
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: studio-4793785332-8ea02
+  SITE_ID: studio-4793785332-8ea02
+  CHANNEL_EXPIRES: 7d
+  FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
+jobs:
+  preview-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Save Firebase Service Account (fallback when no FIREBASE_TOKEN)
+        if: ${{ env.FIREBASE_TOKEN == '' }}
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
+        run: |
+          echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /tmp/service-account.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/service-account.json" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Generate Workbox precache (injectManifest)
+        run: npx workbox-cli@6 injectManifest --config workbox.config.cjs
+
+      - name: Deploy to Firebase Hosting preview channel
+        id: deploy
+        run: |
+          CHANNEL_ID="pr-${{ github.event.pull_request.number }}"
+          echo "Using channel: $CHANNEL_ID"
+          npx firebase hosting:channel:deploy "$CHANNEL_ID" \
+            --project "$PROJECT_ID" \
+            --site "$SITE_ID" \
+            --expires "$CHANNEL_EXPIRES" \
+            --json > out.json
+          cat out.json
+          URL=$(node -e "const o=require('./out.json'); const u=o?.result?.url || o?.result?.hosting?.url || ''; console.log(u);")
+          echo "preview_url=$URL" >> $GITHUB_OUTPUT
+
+      - name: Comment preview URL on PR
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ github.token }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            🔍 Firebase Hosting preview (expira em ${{ env.CHANNEL_EXPIRES }}):
+            ${{ steps.deploy.outputs.preview_url }}

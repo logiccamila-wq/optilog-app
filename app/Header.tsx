@@ -1,29 +1,32 @@
+"use client";
 import Link from 'next/link';
+import Image from 'next/image';
+import AuthStatus from './AuthStatus';
+import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
+import InstallBadge from '@/components/pwa/InstallBadge';
 
-export const dynamic = 'force-dynamic';
 
-export default async function Header() {
+export default function Header() {
   return (
-    <header style={{
-      background: '#fff',
-      padding: '1rem 2rem',
-      borderBottom: '1px solid #e0e0e0',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '2rem'
-    }}>
-      <Link href="/" style={{ textDecoration: 'none', color: '#1c1e21', fontWeight: 'bold', fontSize: '1.2rem' }}>
-        My Blog
-      </Link>
-      <nav>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <Link href="/" style={{ textDecoration: 'none' }}>Home</Link>
-          <Link href="/login" style={{ textDecoration: 'none' }}>Login</Link>
-          <Link href="/signup" style={{ textDecoration: 'none' }}>Cadastro</Link>
-          <Link href="/logout" style={{ textDecoration: 'none', color: '#c00' }}>Sair</Link>
-        </div>
-      </nav>
-    </header>
+    <AppBar position="static" color="primary" sx={{ mb: 3 }}>
+      <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
+            <Image src="/logo-xyz.svg" alt="XYZ LogicFlow" width={28} height={28} priority />
+            <Typography variant="h6" sx={{ ml: 1, fontWeight: 700 }}>OptiLog</Typography>
+          </Link>
+          <Typography variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>XYZ LogicFlow Technology</Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Button component={Link} href="/" color="inherit">Home</Button>
+          <Button component={Link} href="/status" color="inherit">Status</Button>
+          <Button component={Link} href="/ai" color="inherit">IA</Button>
+          <Button component={Link} href="/dashboard" color="inherit">Dashboard</Button>
+          <Button component={Link} href="/posts" color="inherit">Posts</Button>
+          <InstallBadge />
+          <AuthStatus />
+        </Box>
+      </Toolbar>
+    </AppBar>
   );
 }

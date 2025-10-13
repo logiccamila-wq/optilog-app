@@ -2,6 +2,9 @@ import './globals.css';
 import { ReactNode } from 'react';
 import Header from './Header';
 import ToastProvider from '@/components/ui/ToastProvider';
+import { ThemeProvider } from '@/app/providers/ThemeProvider';
+import ServiceWorkerRegister from '@/app/providers/ServiceWorker';
+import SWUpdateSnackbar from '@/components/pwa/SWUpdateSnackbar';
 
 export const metadata = {
   metadataBase: new URL('https://optilog.local'),
@@ -11,8 +14,15 @@ export const metadata = {
   },
   description: 'OptiLog: conteúdo e ferramentas com IA em tema escuro.',
   icons: {
-    icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
+    icon: '/icons/ejg-app-icon.png',
+    shortcut: '/icons/ejg-app-icon.png',
+    apple: '/icons/ejg-app-icon.png',
+  },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    title: 'EJG Optilog',
+    statusBarStyle: 'default',
   },
   openGraph: {
     title: 'OptiLog • Plataforma de Insights',
@@ -34,17 +44,21 @@ export const metadata = {
 };
 
 export const viewport = {
-  themeColor: '#0D111B',
+  themeColor: '#b11212',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR">
       <body>
-        <ToastProvider>
-          <Header />
-          {children}
-        </ToastProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <Header />
+            {children}
+            <ServiceWorkerRegister />
+            <SWUpdateSnackbar />
+          </ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
