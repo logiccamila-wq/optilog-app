@@ -7,45 +7,46 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Optimize for containerized/App Hosting deployments
+  output: 'standalone',
   experimental: {
-    // Help Next handle ESM externals gracefully (firebase/undici)
+    // Permitir resolver ESM externos em modo "loose" para escolher entradas de browser
     esmExternals: 'loose',
   },
-  // Ensure certain ESM/node packages are transpiled and avoid bundling Node-only modules on the client
-  transpilePackages: ['firebase', '@firebase/auth', 'undici'],
-  webpack: (config, { isServer }) => {
+  // Transpile node_modules that ship modern syntax so Webpack can parse
+  transpilePackages: ['undici'],
+  // Ensure certain ESM packages are handled correctly
+  // (removido transpilePackages específico para firebase para evitar conflitos de export)
+  webpack: (config, { isServer, webpack }) => {
+    // Skip customizations when building on Firebase App Hosting (buildpack sets FIREBASE_APP_HOSTING=1)
+    if (process.env.FIREBASE_APP_HOSTING) {
+      return config;
+    }
     if (!isServer) {
-      // Prevent including Node-only fetch implementation in client bundles
+      // Prefer browser conditions when resolving package exports
       config.resolve = config.resolve || {};
+      config.resolve.conditionNames = ['browser', 'import', 'module', 'default'];
+      // Hard-block undici from client bundles (alias to stub/false)
       config.resolve.alias = {
         ...(config.resolve.alias || {}),
-        undici: false,
-        'undici/': false,
-        'undici/lib': false,
-        'firebase/auth': 'firebase/auth/dist/esm/index.js',
-        '@firebase/auth': '@firebase/auth/dist/esm/index.js',
+        undici: require.resolve('./lib/undici-stub.js'),
+        '@undici/web': require.resolve('./lib/undici-stub.js'),
+        '@undici/*': require.resolve('./lib/undici-stub.js'),
+        'undici/lib/web/fetch/util.js': require.resolve('./lib/undici-stub.js'),
+        'undici/lib/web/fetch': require.resolve('./lib/undici-stub.js'),
+        'undici/lib': require.resolve('./lib/undici-stub.js'),
+        // Force Firebase Auth to use browser build and avoid node-esm variant
+        '@firebase/auth/dist/node-esm/index.js': require.resolve('./lib/empty.js'),
       };
-      // Avoid parsing undici entirely
-      config.module = config.module || {};
-      config.module.noParse = /node_modules[\\/](undici)[\\/]/;
-      config.resolve.fallback = {
-        ...(config.resolve.fallback || {}),
-        undici: false,
-      };
-      // Prefer browser conditions when resolving package exports
-      config.resolve.conditionNames = [
-        'browser',
-        'import',
-        'module',
-        'default',
-      ];
-      // Hint webpack to avoid picking node-specific auth build
-      config.resolve.alias['@firebase/auth/dist/node-esm'] = '@firebase/auth/dist/esm/index.js';
-      config.resolve.alias['@firebase/auth/dist/node-esm/index.js'] = '@firebase/auth/dist/esm/index.js';
-      config.resolve.alias['firebase/auth/dist/index.mjs'] = 'firebase/auth/dist/esm/index.js';
-      // Force browser variant for auth-compat
-      config.resolve.alias['@firebase/auth-compat'] = '@firebase/auth-compat/dist/esm/index.esm.js';
-      config.resolve.alias['@firebase/auth-compat/dist/esm/index.node.esm.js'] = '@firebase/auth-compat/dist/esm/index.esm.js';
+      // Ignore undici and @undici imports to avoid parsing Node-only code in client
+      config.plugins = config.plugins || [];
+      config.plugins.push(
+        new webpack.IgnorePlugin({ resourceRegExp: /^undici(\\|\/|$)/ })
+      );
+      config.plugins.push(
+        new webpack.IgnorePlugin({ resourceRegExp: /^@undici\// })
+      );
+      // Keep default package export resolution; avoid forcing specific Firebase variants here
     }
     return config;
   },
