@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-export const dynamic = 'force-dynamic';
+import { Typography, Alert, Card, CardContent, Button, Box, Chip, Paper } from '@mui/material';
 import Link from 'next/link';
 import { getPostsPage, type Post } from '@/utils/posts';
 
@@ -64,42 +64,53 @@ export default function BlogPostsPage() {
     }
   };
 
-  if (loading) { return <main className="container"><p>Carregando posts...</p></main>; }
+  if (loading) { return <main className="container"><Typography>Carregando posts...</Typography></main>; }
 
   return (
     <main className="container">
-      <h1 className="header">My Blog</h1>
-      <p className="subheader">Lista de posts. Integração com API externa é opcional (defina `NEXT_PUBLIC_POSTS_API_URL`).</p>
+      <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>OptiLog</Typography>
+      <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+        Lista de posts. Integração com API externa é opcional (defina `NEXT_PUBLIC_POSTS_API_URL`).
+      </Typography>
 
-      {error && <p style={{ color: 'red', background: 'lightyellow', padding: '1rem', border: '1px solid red' }}>Erro: {error}</p>}
+      <Box aria-live="polite">
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>Erro: {error}</Alert>
+        )}
+      </Box>
 
       {!hasApi && !hasFirebase && (
-        <div style={{ background: '#fffbe6', border: '1px solid #ffe58f', padding: '1rem', marginBottom: '1rem' }}>
+        <Alert severity="warning" sx={{ mb: 2 }}>
           <strong>Atenção:</strong> usando dados de demonstração. Configure Firebase em `.env.local` (variáveis `NEXT_PUBLIC_FIREBASE_*`) ou defina `NEXT_PUBLIC_POSTS_API_URL` para uma API externa.
-        </div>
+        </Alert>
       )}
 
       {!error && posts.length === 0 && (
-        <div className="post-card">
-          <p>Nenhum post encontrado.</p>
-        </div>
+        <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+          <Typography>Nenhum post encontrado.</Typography>
+        </Paper>
       )}
 
       {!error && posts.map((post) => (
-        <article key={post.id} className="post-card">
-          <Link href={`/posts/${post.slug}`} style={{ textDecoration: "none", color: "inherit" }}>
-            <h2 className="post-title">{post.title}</h2>
-          </Link>
-          <p className="post-content">{post.content}</p>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-            <small className="post-status">Status: {post.is_published ? 'Published' : 'Draft'}</small>
-          </div>
-        </article>
+        <Card key={post.id} variant="outlined" sx={{ mb: 2 }}>
+          <CardContent>
+            <Link href={`/posts/${post.slug}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>{post.title}</Typography>
+            </Link>
+            <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>{post.content}</Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+              <Chip label={post.is_published ? 'Publicado' : 'Rascunho'} size="small" color={post.is_published ? 'success' as any : 'default'} />
+            </Box>
+          </CardContent>
+        </Card>
       ))}
+
       {!error && !endReached && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '1rem' }}>
-          <button onClick={loadMore} disabled={loadingMore} style={{ padding: '0.5rem 1rem' }}>{loadingMore ? 'Carregando...' : 'Carregar mais'}</button>
-        </div>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 2 }}>
+          <Button variant="contained" onClick={loadMore} disabled={loadingMore}>
+            {loadingMore ? 'Carregando...' : 'Carregar mais'}
+          </Button>
+        </Box>
       )}
     </main>
   );

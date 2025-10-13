@@ -3,7 +3,7 @@
   "firestore": { "rules": "firestore.rules", "indexes": "firestore.indexes.json" },
   "hosting": [
     {
-      "target": "web",
+      "site": "studio-4793785332-8ea02",
       "source": ".",
       "ignore": [
         "**/node_modules/**",

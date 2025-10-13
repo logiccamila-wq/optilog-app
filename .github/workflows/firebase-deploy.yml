@@ -20,6 +20,15 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install dependencies (root)
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Generate Workbox precache (injectManifest)
+        run: npx workbox-cli@6 injectManifest --config workbox.config.cjs
+
       - name: Authenticate to Google Cloud (WIF)
         id: auth
         uses: google-github-actions/auth@v2

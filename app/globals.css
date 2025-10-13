@@ -1,11 +1,13 @@
 body {
-  font-family: Arial, sans-serif;
   margin: 0;
   padding: 0;
+  font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
+  background: #0D111B; /* garante fundo mesmo em elementos fora do MUI */
+  color: #FFFFFF;
 }
 
 .container {
-  max-width: 800px;
+  max-width: 960px;
   margin: 2rem auto;
   padding: 0 1rem;
 }
@@ -20,4 +22,8 @@ body {
   padding: 1rem;
   margin-bottom: 1rem;
   border-radius: 4px;
+}
+
+.subheader {
+  color: #64748b;
 }
