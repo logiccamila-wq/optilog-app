@@ -22,17 +22,21 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Validate WIF configuration variables
+      - name: Validate WIF configuration variables (only when using WIF)
+        if: ${{ secrets.GCP_SA_KEY == '' }}
         shell: bash
         run: |
           set -euo pipefail
           echo "GCP_WIF_PROVIDER=${{ vars.GCP_WIF_PROVIDER }}"
           echo "GCP_SERVICE_ACCOUNT=${{ vars.GCP_SERVICE_ACCOUNT }}"
-          if [[ -z "${{ vars.GCP_WIF_PROVIDER }}" || "${{ vars.GCP_WIF_PROVIDER }}" == *"<POOL_ID>"* || "${{ vars.GCP_WIF_PROVIDER }}" == *"<PROVIDER_ID>"* ]]; then
-            echo "❌ GCP_WIF_PROVIDER inválido. Configure com o caminho real do provider (projects/<PROJECT_NUMBER>/locations/global/workloadIdentityPools/<POOL_ID>/providers/<PROVIDER_ID>)." >&2
+          PROVIDER='${{ vars.GCP_WIF_PROVIDER }}'
+          # Falha se vazio, se contiver placeholders <...>, espaços ou texto explicativo
+          if [[ -z "$PROVIDER" || "$PROVIDER" == *"<"* || "$PROVIDER" == *">"* || "$PROVIDER" == *"substitua"* || "$PROVIDER" == *"("* || "$PROVIDER" == *")"* ]]; then
+            echo "❌ GCP_WIF_PROVIDER inválido. Use o recurso completo do provider sem comentários/placeholder: projects/<PROJECT_NUMBER>/locations/global/workloadIdentityPools/<POOL_ID>/providers/<PROVIDER_ID>" >&2
             exit 1
           fi
-          if [[ -z "${{ vars.GCP_SERVICE_ACCOUNT }}" || "${{ vars.GCP_SERVICE_ACCOUNT }}" == *"("* ]]; then
+          SA='${{ vars.GCP_SERVICE_ACCOUNT }}'
+          if [[ -z "$SA" || "$SA" == *"("* || "$SA" == *")"* ]]; then
             echo "❌ GCP_SERVICE_ACCOUNT inválido. Use o e-mail da service account sem comentários (ex.: firebase-deployer@<PROJECT_ID>.iam.gserviceaccount.com)." >&2
             exit 1
           fi
@@ -55,7 +59,14 @@ jobs:
       - name: Build project
         run: npm run build
 
+      - name: Authenticate to Google Cloud (Service Account JSON)
+        if: ${{ secrets.GCP_SA_KEY != '' }}
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
       - name: Authenticate to Google Cloud (WIF)
+        if: ${{ secrets.GCP_SA_KEY == '' }}
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
