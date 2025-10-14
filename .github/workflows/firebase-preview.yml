@@ -1,53 +1,45 @@
-name: Firebase Preview Deploy
+name: Firebase Preview Deploy (WIF)
 
 on:
-  pull_request:
-<<<<<<< HEAD
-    types: [opened, synchronize]
-
-jobs:
-  preview:
-    runs-on: ubuntu-latest
-    env:
-      FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-      FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
-      FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build Next.js
-        run: npm run build
-
-      - name: Deploy to Firebase Preview Channel
-        run: |
-          npx firebase hosting:channel:deploy pr-${{ github.event.pull_request.number }} --project $FIREBASE_PROJECT_ID --expires 7d
-=======
+  pull_request_target:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
-env:
-  PROJECT_ID: studio-4793785332-8ea02
-  SITE_ID: studio-4793785332-8ea02
-  CHANNEL_EXPIRES: 7d
-  FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
 
 jobs:
-  preview-deploy:
+  preview:
+    name: Build and Preview on Firebase Hosting
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
+
     steps:
-      - name: Checkout code
+      - name: Checkout PR head commit
         uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Validate WIF configuration variables (only when using WIF)
+        if: ${{ secrets.GCP_SA_KEY == '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "GCP_WIF_PROVIDER=${{ vars.GCP_WIF_PROVIDER }}"
+          echo "GCP_SERVICE_ACCOUNT=${{ vars.GCP_SERVICE_ACCOUNT }}"
+          PROVIDER='${{ vars.GCP_WIF_PROVIDER }}'
+          # Falha se vazio, se contiver placeholders <...>, espaços ou texto explicativo
+          if [[ -z "$PROVIDER" || "$PROVIDER" == *"<"* || "$PROVIDER" == *">"* || "$PROVIDER" == *"substitua"* || "$PROVIDER" == *"("* || "$PROVIDER" == *")"* ]]; then
+            echo "❌ GCP_WIF_PROVIDER inválido. Use o recurso completo do provider sem comentários/placeholder: projects/<PROJECT_NUMBER>/locations/global/workloadIdentityPools/<POOL_ID>/providers/<PROVIDER_ID>" >&2
+            exit 1
+          fi
+          SA='${{ vars.GCP_SERVICE_ACCOUNT }}'
+          if [[ -z "$SA" || "$SA" == *"("* || "$SA" == *")"* ]]; then
+            echo "❌ GCP_SERVICE_ACCOUNT inválido. Use o e-mail da service account sem comentários (ex.: firebase-deployer@<PROJECT_ID>.iam.gserviceaccount.com)." >&2
+            exit 1
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -55,47 +47,73 @@ jobs:
           node-version: 20
           cache: 'npm'
 
-      - name: Save Firebase Service Account (fallback when no FIREBASE_TOKEN)
-        if: ${{ env.FIREBASE_TOKEN == '' }}
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
-        run: |
-          echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /tmp/service-account.json
-          echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/service-account.json" >> $GITHUB_ENV
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Install dependencies (include dev deps)
-        run: npm ci --include=dev
-
-      - name: Verify TypeScript React types
+      - name: Typecheck (optional)
         run: |
-          npm ls @types/react @types/react-dom || npm i -D @types/react @types/react-dom
+          if [ -f tsconfig.json ]; then
+            npm run typecheck || true
+          fi
 
       - name: Build project
         run: npm run build
 
-      - name: Generate Workbox precache (injectManifest)
-        run: npx workbox-cli@6 injectManifest --config workbox.config.cjs
+      - name: Authenticate to Google Cloud (Service Account JSON)
+        if: ${{ secrets.GCP_SA_KEY != '' }}
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Deploy to Firebase Hosting preview channel
+      - name: Authenticate to Google Cloud (WIF)
+        if: ${{ secrets.GCP_SA_KEY == '' }}
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          token_format: 'access_token'
+
+      - name: Install Firebase CLI
+        run: npm i -g firebase-tools
+
+      - name: Deploy preview channel
         id: deploy
+        shell: bash
         run: |
-          CHANNEL_ID="pr-${{ github.event.pull_request.number }}"
-          echo "Using channel: $CHANNEL_ID"
-          npx firebase hosting:channel:deploy "$CHANNEL_ID" \
-            --project "$PROJECT_ID" \
-            --site "$SITE_ID" \
-            --expires "$CHANNEL_EXPIRES" \
-            --json > out.json
-          cat out.json
-          URL=$(node -e "const o=require('./out.json'); const u=o?.result?.url || o?.result?.hosting?.url || ''; console.log(u);")
-          echo "preview_url=$URL" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          CHANNEL_ID="pr-${{ github.event.number }}"
+          echo "Deploying to channel: ${CHANNEL_ID}"
+          # TTL padrão 7 dias; usa projeto default do .firebaserc
+          firebase hosting:channel:deploy "${CHANNEL_ID}" --json > deploy.json
+          echo "Deploy output saved to deploy.json"
+          cat deploy.json
+
+      - name: Extract preview URL
+        id: extract
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL=$(jq -r '.result[]?.details[]?.url // .result[]?.url // .result?.details?.url // .result?.url' deploy.json | head -n1)
+          if [[ -z "$URL" || "$URL" == "null" ]]; then
+            echo "❌ Não foi possível extrair a URL de preview." >&2
+            exit 1
+          fi
+          echo "Preview URL: $URL"
+          echo "PREVIEW_URL=$URL" >> "$GITHUB_ENV"
 
       - name: Comment preview URL on PR
-        uses: peter-evans/create-or-update-comment@v4
+        uses: actions/github-script@v7
         with:
-          token: ${{ github.token }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            🔍 Firebase Hosting preview (expira em ${{ env.CHANNEL_EXPIRES }}):
-            ${{ steps.deploy.outputs.preview_url }}
->>>>>>> origin/main
+          script: |
+            const url = process.env.PREVIEW_URL;
+            if (!url) {
+              core.setFailed('Preview URL não encontrada no ambiente.');
+            } else {
+              const body = `✅ Firebase Preview disponível:\n\n${url}\n\nCanal: pr-${{ github.event.number }} (expira em 7 dias)`;
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
