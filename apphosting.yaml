@@ -10,8 +10,8 @@ runConfig:
     - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
       value: "studio-4793785332-8ea02.appspot.com"
     - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-      value: "COLOQUE_MESSAGING_SENDER_ID_AQUI"
+      value: "435822865745"
     - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-      value: "COLOQUE_FIREBASE_APP_ID_AQUI"
+      value: "1:435822865745:web:51bc089558ac12631ef770"
     - variable: OPENAI_API_KEY
       value: "COLOQUE_OPENAI_API_KEY_AQUI" # recomendado usar Secret Manager / Console em produção
