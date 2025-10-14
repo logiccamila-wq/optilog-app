@@ -83,8 +83,14 @@ jobs:
           set -euo pipefail
           CHANNEL_ID="pr-${{ github.event.number }}"
           echo "Deploying to channel: ${CHANNEL_ID}"
-          # TTL padrão 7 dias; usa projeto default do .firebaserc
-          firebase hosting:channel:deploy "${CHANNEL_ID}" --json > deploy.json
+          # TTL padrão 7 dias; usa projeto do .firebaserc ou variável GCP_PROJECT_ID se definida
+          PROJECT='${{ vars.GCP_PROJECT_ID }}'
+          if [[ -n "$PROJECT" && "$PROJECT" != "null" ]]; then
+            echo "Using project: $PROJECT"
+            firebase hosting:channel:deploy "${CHANNEL_ID}" --project "$PROJECT" --json > deploy.json
+          else
+            firebase hosting:channel:deploy "${CHANNEL_ID}" --json > deploy.json
+          fi
           echo "Deploy output saved to deploy.json"
           cat deploy.json
 

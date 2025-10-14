@@ -44,15 +44,19 @@ jobs:
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
-
-      - name: Install and build Functions
-        run: |
-          cd functions
-          npm ci
-          npm run build
-
-      - name: Deploy Hosting and Functions via Firebase CLI
+      
+      - name: Deploy Hosting (and Functions if present)
         env:
           FIREBASE_TOKEN: ${{ steps.auth.outputs.access_token }}
+        shell: bash
         run: |
-          firebase deploy --project ${{ vars.GCP_PROJECT_ID }} --only hosting,functions --token "$FIREBASE_TOKEN"
+          set -euo pipefail
+          TARGETS="hosting"
+          if [ -f functions/package.json ]; then
+            echo "Detected functions/package.json. Installing and building Functions..."
+            (cd functions && npm ci && npm run build)
+            TARGETS="hosting,functions"
+          else
+            echo "No functions/package.json found. Deploying Hosting only." 
+          fi
+          firebase deploy --project "${{ vars.GCP_PROJECT_ID }}" --only "$TARGETS" --token "$FIREBASE_TOKEN"
