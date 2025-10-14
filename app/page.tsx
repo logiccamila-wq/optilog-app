@@ -69,6 +69,10 @@ export default function BlogPostsPage() {
   return (
     <main className="container">
       <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>OptiLog</Typography>
+      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+        <Button component={Link} href="/driver" variant="contained" color="primary">App Motorista</Button>
+        <Button component={Link} href="/signup" variant="outlined" color="primary">Cadastro</Button>
+      </Box>
       <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
         Lista de posts. Integração com API externa é opcional (defina `NEXT_PUBLIC_POSTS_API_URL`).
       </Typography>
