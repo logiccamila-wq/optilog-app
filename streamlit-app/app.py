@@ -3,8 +3,27 @@ import pandas as pd
 import numpy as np
 import time
 import base64
+import os
+
+# Importar os módulos de cada aba
+from tabs import (
+    developer_hub,
+    architecture_diagram,
+    componentes_fluxo,
+    firestore_collections,
+    cloud_functions,
+    nucleo_financeiro,
+    gestao_frota,
+    guia_estudo,
+    chat_suporte,
+    monitoramento_logistico,
+    analytics_ia
+)
+
 
 # Configuração da página
+ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
+
 st.set_page_config(
     page_title="XYZ LogicFlow - OptiLog",
     page_icon="🚚",
@@ -12,8 +31,9 @@ st.set_page_config(
 )
 
 # Função para exibir a logo SVG
-def render_svg(svg_file):
-    with open(svg_file, "r") as f:
+def render_svg(svg_filename):
+    svg_path = os.path.join(ASSETS_DIR, svg_filename)
+    with open(svg_path, "r") as f:
         svg = f.read()
     b64 = base64.b64encode(svg.encode("utf-8")).decode("utf-8")
     html = f'<img src="data:image/svg+xml;base64,{b64}" style="display: block; margin: 0 auto; max-width: 300px;">'
@@ -27,7 +47,7 @@ if 'start_time' not in st.session_state:
 # Tela de abertura
 if st.session_state.show_splash and time.time() - st.session_state.start_time < 3:
     st.markdown("<div style='text-align: center; margin-top: 100px;'>", unsafe_allow_html=True)
-    st.markdown(render_svg("assets/logo.svg"), unsafe_allow_html=True)
+    st.markdown(render_svg("logo.svg"), unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("<style>div.block-container{padding-top:0px;}</style>", unsafe_allow_html=True)
     time.sleep(2)  # Exibe a tela de abertura por 2 segundos
@@ -37,7 +57,7 @@ else:
     # Cabeçalho com logo e título
     col1, col2 = st.columns([1, 5])
     with col1:
-        st.markdown(render_svg("assets/logo.svg"), unsafe_allow_html=True)
+        st.markdown(render_svg("logo.svg"), unsafe_allow_html=True)
     with col2:
         st.title("OptiLog - Arquitetura do Sistema")
         st.markdown("<p style='color: #5E35B1; margin-top: -15px;'>Powered by XYZ LogicFlow Technology</p>", unsafe_allow_html=True)
@@ -2851,4 +2871,188 @@ with tab10:
 
 # Rodapé
 st.markdown("---")
-st.markdown("© 2025 OptiLog - Sistema de Gestão de Transportes | EJG - Evolução em Transporte")
+st.markdown("© 2025 OptiLog - Sistema de Gestão de Transportes | EJG - Evolução em Transporte")# Em um arquivo utils.py ou diretamente na aba
+def render_info_card(title, status, version):
+    st.markdown(f"""
+    <div style="border: 1px solid #ddd; padding: 8px; margin: 5px 0; border-radius: 5px; background-color: #f9f9f9;">
+        <strong>{title}</strong><br>
+        {status} | {version}
+    </div>
+    """, unsafe_allow_html=True)
+
+# No código da aba developer_hub.py
+with col1:
+    st.markdown("#### 🚀 Ambiente de Desenvolvimento")
+    dev_tools = [
+        {"Tool": "VS Code Extensions", "Status": "🟢 Ativo", "Versão": "v1.2.3"},
+        # ...
+    ]
+    for tool in dev_tools:
+        render_info_card(tool["Tool"], tool["Status"], tool["Versão"])
+streamlit-app/
+|-- app.py
+|-- assets/
+|   |-- logo.svg
+|-- tabs/
+|   |-- __init__.py
+|   |-- developer_hub.py
+|   |-- architecture_diagram.py
+|   |-- firestore_collections.py
+|   |-- ... (um arquivo para cada aba)
+# app.py (versão refatorada)
+import streamlit as st
+# ... outras importações ...
+from tabs import (
+    developer_hub,
+    architecture_diagram,
+    firestore_collections,
+    # ... importe as outras abas
+)
+
+# ... (código de configuração da página e splash screen) ...
+
+# Cabeçalho
+# ...
+
+# Tabs
+tabs = st.tabs([
+    "🔧 Developer Hub", "📊 Diagrama de Arquitetura", "🔄 Componentes & Fluxo", 
+    "🗄️ Coleções Firestore", "☁️ Cloud Functions", "💰 Núcleo Financeiro EJG", 
+    "🚛 Gestão de Frota EJG", "📚 Guia de Estudo", "💬 Chat & Suporte EJG", 
+    "📍 Monitoramento Logístico", "🤖 Analytics e IA"
+])
+
+with tabs[0]:
+    developer_hub.render()
+
+with tabs[1]:
+    architecture_diagram.render()
+
+with tabs[3]:
+    firestore_collections.render()
+
+# ... e assim por diante para as outras abas
+# tabs/developer_hub.py
+import streamlit as st
+
+def render():
+    st.header("🔧 Developer Hub - Centro de Desenvolvimento")
+    st.markdown("**Plataforma Integrada de Desenvolvimento, Automação e Integração**")
+    # ... resto do código da aba Developer Hub ...
+# i18n.py
+TEXTS = {
+    "pt": {
+        "dev_hub_title": "🔧 Developer Hub - Centro de Desenvolvimento",
+        "dev_hub_subtitle": "**Plataforma Integrada de Desenvolvimento, Automação e Integração**",
+        "api_monitoring_header": "#### 📊 Monitoramento de APIs",
+        # ... outros textos
+    },
+    "en": {
+        "dev_hub_title": "🔧 Developer Hub",
+        "dev_hub_subtitle": "**Integrated Development, Automation, and Integration Platform**",
+        "api_monitoring_header": "#### 📊 API Monitoring",
+        # ...
+    }
+}
+
+def get_text(key, lang="pt"):
+    """Retorna o texto para a chave e idioma especificados."""
+    return TEXTS.get(lang, {}).get(key, f"<{key}>")
+# Em um dos seus arquivos de aba
+from i18n import get_text
+
+# ...
+st.header(get_text("dev_hub_title"))
+st.markdown(get_text("dev_hub_subtitle"))
+
+# ...
+with col2:
+    st.markdown(get_text("api_monitoring_header"))
+# Em um arquivo utils.py ou diretamente na aba
+def render_info_card(title, status, version):
+    st.markdown(f"""
+    <div style="border: 1px solid #ddd; padding: 8px; margin: 5px 0; border-radius: 5px; background-color: #f9f9f9;">
+        <strong>{title}</strong><br>
+        {status} | {version}
+    </div>
+    """, unsafe_allow_html=True)
+
+# No código da aba developer_hub.py
+with col1:
+    st.markdown("#### 🚀 Ambiente de Desenvolvimento")
+    dev_tools = [
+        {"Tool": "VS Code Extensions", "Status": "🟢 Ativo", "Versão": "v1.2.3"},
+        # ...
+    ]
+    for tool in dev_tools:
+        render_info_card(tool["Tool"], tool["Status"], tool["Versão"])
+# Em um arquivo utils.py ou diretamente na aba
+def render_info_card(title, status, version):
+    st.markdown(f"""
+    <div style="border: 1px solid #ddd; padding: 8px; margin: 5px 0; border-radius: 5px; background-color: #f9f9f9;">
+        <strong>{title}</strong><br>
+        {status} | {version}
+    </div>
+    """, unsafe_allow_html=True)
+
+# No código da aba developer_hub.py
+with col1:
+    st.markdown("#### 🚀 Ambiente de Desenvolvimento")
+    dev_tools = [
+        {"Tool": "VS Code Extensions", "Status": "🟢 Ativo", "Versão": "v1.2.3"},
+        # ...
+    ]
+    for tool in dev_tools:
+        render_info_card(tool["Tool"], tool["Status"], tool["Versão"])
+streamlit-app/
+|-- app.py
+|-- assets/
+|   |-- logo.svg
+|-- tabs/
+|   |-- __init__.py
+|   |-- developer_hub.py
+|   |-- architecture_diagram.py
+|   |-- firestore_collections.py
+|   |-- ... (um arquivo para cada aba)
+# app.py (versão refatorada)
+import streamlit as st
+# ... outras importações ...
+from tabs import (
+    developer_hub,
+    architecture_diagram,
+    firestore_collections,
+    # ... importe as outras abas
+)
+
+# ... (código de configuração da página e splash screen) ...
+
+# Cabeçalho
+# ...
+
+# Tabs
+tabs = st.tabs([
+    "🔧 Developer Hub", "📊 Diagrama de Arquitetura", "🔄 Componentes & Fluxo", 
+    "🗄️ Coleções Firestore", "☁️ Cloud Functions", "💰 Núcleo Financeiro EJG", 
+    "🚛 Gestão de Frota EJG", "📚 Guia de Estudo", "💬 Chat & Suporte EJG", 
+    "📍 Monitoramento Logístico", "🤖 Analytics e IA"
+])
+
+with tabs[0]:
+    developer_hub.render()
+
+with tabs[1]:
+    architecture_diagram.render()
+
+with tabs[3]:
+    firestore_collections.render()
+
+# ... e assim por diante para as outras abas
+# tabs/developer_hub.py
+import streamlit as st
+
+def render():
+    st.header("🔧 Developer Hub - Centro de Desenvolvimento")
+    st.markdown("**Plataforma Integrada de Desenvolvimento, Automação e Integração**")
+    # ... resto do código da aba Developer Hub ...
+# tabs/monitoramento_logistico.py
+import streamlit as st
