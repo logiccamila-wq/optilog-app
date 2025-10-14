@@ -19,9 +19,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
 
-      - name: Install dependencies (root)
-        run: npm ci
+      - name: Install dependencies (root, include dev)
+        run: npm ci --include=dev
+
+      - name: Verify TypeScript React types
+        run: |
+          npm ls @types/react @types/react-dom || npm i -D @types/react @types/react-dom
 
       - name: Build project
         run: npm run build
