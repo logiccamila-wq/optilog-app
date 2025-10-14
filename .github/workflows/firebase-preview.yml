@@ -12,11 +12,6 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    env:
-      FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-      FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
-      FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
-      FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,19 +32,49 @@ jobs:
       - name: Build project
         run: npm run build
 
-      # Workbox step removed to avoid any non-essential failures during urgent preview
-
-      - name: Compose Service Account JSON
-        id: sa
-        run: |
-          node -e "const fs=require('fs'); const cred={type:'service_account', project_id:process.env.FIREBASE_PROJECT_ID, private_key:(process.env.FIREBASE_PRIVATE_KEY||'').replace(/\\n/g,'\n'), client_email:process.env.FIREBASE_CLIENT_EMAIL}; fs.writeFileSync('sa.json', JSON.stringify(cred));"
-          echo "json=$(cat sa.json)" >> $GITHUB_OUTPUT
-
-      - name: Deploy preview with official Firebase Action
-        uses: FirebaseExtended/action-hosting-deploy@v0
+      # Authenticate using GitHub OIDC (WIF) — no secrets required
+      - name: Authenticate to Google Cloud (WIF)
+        id: auth
+        uses: google-github-actions/auth@v2
         with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ steps.sa.outputs.json }}
-          projectId: ${{ env.FIREBASE_PROJECT_ID }}
-          channelId: pr-${{ github.event.pull_request.number }}
-          expires: 7d
+          token_format: 'access_token'
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Deploy preview channel via Firebase CLI
+        id: preview
+        env:
+          FIREBASE_TOKEN: ${{ steps.auth.outputs.access_token }}
+          CHANNEL_ID: pr-${{ github.event.pull_request.number }}
+        run: |
+          firebase hosting:channel:deploy "$CHANNEL_ID" --project ${{ vars.GCP_PROJECT_ID }} --token "$FIREBASE_TOKEN" --non-interactive
+
+      - name: Get preview URL
+        id: url
+        env:
+          FIREBASE_TOKEN: ${{ steps.auth.outputs.access_token }}
+          CHANNEL_ID: pr-${{ github.event.pull_request.number }}
+        run: |
+          firebase hosting:channel:list --project ${{ vars.GCP_PROJECT_ID }} --token "$FIREBASE_TOKEN" --json > channels.json
+          node -e "const fs=require('fs'); const j=JSON.parse(fs.readFileSync('channels.json','utf8')); const c=(j.channels||[]).find(x=>x.name===process.env.CHANNEL_ID); if(c && c.url){ fs.appendFileSync(process.env.GITHUB_OUTPUT, `preview_url=${c.url}\n`); } else { console.error('Channel not found or no URL'); process.exit(1); }"
+
+      - name: Comment preview URL on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = context.payload.pull_request.number;
+            const url = `${{ steps.url.outputs.preview_url }}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number,
+              body: `Firebase Hosting preview: ${url}`
+            });
