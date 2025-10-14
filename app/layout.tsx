@@ -7,16 +7,16 @@ import ServiceWorkerRegister from '@/app/providers/ServiceWorker';
 import SWUpdateSnackbar from '@/components/pwa/SWUpdateSnackbar';
 
 export const metadata = {
-  metadataBase: new URL('https://optilog.local'),
+  metadataBase: new URL('https://studio-4793785332-8ea02.web.app'),
   title: {
     default: 'OptiLog • Plataforma de Insights',
     template: '%s • OptiLog',
   },
   description: 'OptiLog: conteúdo e ferramentas com IA em tema escuro.',
   icons: {
-    icon: '/icons/ejg-app-icon.png',
-    shortcut: '/icons/ejg-app-icon.png',
-    apple: '/icons/ejg-app-icon.png',
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
   },
   manifest: '/manifest.json',
   appleWebApp: {
@@ -44,7 +44,7 @@ export const metadata = {
 };
 
 export const viewport = {
-  themeColor: '#b11212',
+  themeColor: '#0E539A',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

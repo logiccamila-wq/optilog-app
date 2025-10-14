@@ -1,7 +1,6 @@
 "use client";
 import Link from 'next/link';
 import Image from 'next/image';
-import AuthStatus from './AuthStatus';
 import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
 import InstallBadge from '@/components/pwa/InstallBadge';
 
@@ -20,11 +19,8 @@ export default function Header() {
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
           <Button component={Link} href="/" color="inherit">Home</Button>
           <Button component={Link} href="/status" color="inherit">Status</Button>
-          <Button component={Link} href="/ai" color="inherit">IA</Button>
-          <Button component={Link} href="/dashboard" color="inherit">Dashboard</Button>
           <Button component={Link} href="/posts" color="inherit">Posts</Button>
           <InstallBadge />
-          <AuthStatus />
         </Box>
       </Toolbar>
     </AppBar>
