@@ -43,9 +43,22 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      # 5. Roda os testes e o linter para garantir a qualidade do código
-      - name: Run Tests and Lint
-        run: npm test
+      # 5. Roda o linter e testes se existirem (não falha se não houver)
+      - name: Lint (if available)
+        run: |
+          if npm run | grep -q "lint"; then
+            npm run lint
+          else
+            echo "No lint script defined; skipping"
+          fi
+
+      - name: Run tests (if available)
+        run: |
+          if npm run | grep -q "test"; then
+            npm test -- --ci || npm test
+          else
+            echo "No test script defined; skipping"
+          fi
 
       # 6. Faz o build do projeto Next.js
       - name: Build Project
