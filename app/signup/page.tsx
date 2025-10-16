@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getAuthInstance } from '@/lib/firebaseClient';
+import { auth, isConfigured } from '@/lib/firebaseClient';
 import { Box, TextField, Button, Typography, Alert, Paper, CircularProgress } from '@mui/material';
 import { useToast } from '@/components/ui/ToastProvider';
 
@@ -42,32 +43,26 @@ export default function SignupPage() {
   const [info, setInfo] = useState<string | null>(null);
   const [lastErrorCode, setLastErrorCode] = useState<string | null>(null);
   const toast = useToast();
-  const [authInst, setAuthInst] = useState<any>(null);
-  useEffect(() => {
-    getAuthInstance().then(setAuthInst).catch(() => setAuthInst(null));
-  }, []);
-  const canAuth = !!authInst;
+  const router = useRouter();
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setInfo(null);
     setLastErrorCode(null);
-    if (!canAuth) {
+    if (!isConfigured || !auth) {
       setError('Firebase não configurado. Preencha NEXT_PUBLIC_FIREBASE_* no .env.local');
       return;
     }
     setLoading(true);
     try {
-      const auth = authInst || (await getAuthInstance());
-      if (!auth) throw new Error('Auth não disponível no cliente.');
       const { createUserWithEmailAndPassword, updateProfile } = await import('firebase/auth');
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       if (name) {
         await updateProfile(cred.user, { displayName: name });
       }
       toast.show('Cadastro realizado com sucesso!', 'success');
-      window.location.href = '/';
+      router.push('/');
     } catch (err: any) {
       const msg = translateAuthError(err);
       setError(msg);
@@ -81,7 +76,7 @@ export default function SignupPage() {
   const onResetPassword = async () => {
     setError(null);
     setInfo(null);
-    if (!canAuth) {
+    if (!isConfigured || !auth) {
       setError('Firebase não configurado. Preencha NEXT_PUBLIC_FIREBASE_* no .env.local');
       return;
     }
@@ -90,8 +85,6 @@ export default function SignupPage() {
       return;
     }
     try {
-      const auth = authInst || (await getAuthInstance());
-      if (!auth) throw new Error('Auth não disponível no cliente.');
       const { sendPasswordResetEmail } = await import('firebase/auth');
       await sendPasswordResetEmail(auth, email);
       const msg = 'Enviamos um link de redefinição de senha para seu email.';
